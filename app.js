@@ -22,6 +22,7 @@
 
             const strength = severitySlider.value / 100;
             const mode = document.querySelector('input[name="mode"]:checked').value;
+            const cvdType = cvdTypeSelect.value;
 
             if(strength === 0) return;
 
@@ -35,26 +36,51 @@
 
                 let newR, newG, newB; 
 
-                if(mode === 'simulate') {
-                    newR = (0.367322 * r + 0.860646 * g - 0.227968 * b) * strength + r * (1 - strength);
-                    newG = (0.280085 * r + 0.672501 * g + 0.047413 * b) * strength + g * (1 - strength);
-                    newB = (-0.011820 * r + 0.042940 * g + 0.968881 * b) * strength + b * (1 - strength);
+                if(cvdType === 'deuteranomaly'){
+
+                    if(mode === 'simulate') {
+                        newR = (0.367322 * r + 0.860646 * g - 0.227968 * b) * strength + r * (1 - strength);
+                        newG = (0.280085 * r + 0.672501 * g + 0.047413 * b) * strength + g * (1 - strength);
+                        newB = (-0.011820 * r + 0.042940 * g + 0.968881 * b) * strength + b * (1 - strength);
+                    } else {
+                        let simR = 0.367322 * r + 0.860646 * g - 0.227968 * b;
+                        let simG = 0.280085 * r + 0.672501 * g + 0.047413 * b;
+                        let simB = -0.011820 * r + 0.042940 * g + 0.968881 * b;
+
+                        let errR = r - simR;
+                        let errG = g - simG;
+                        let errB = b - simB;
+
+                        let shiftR = errR * 0.0;
+                        let shiftG = errG * 0.7;
+                        let shiftB = (errR * 1.0) + (errG * 1.0);
+
+                        newR = r + shiftR * strength;
+                        newG = g + shiftG * strength;
+                        newB = b + shiftB * strength;
+                    }
                 } else {
-                    let simR = 0.367322 * r + 0.860646 * g - 0.227968 * b;
-                    let simG = 0.280085 * r + 0.672501 * g + 0.047413 * b;
-                    let simB = -0.011820 * r + 0.042940 * g + 0.968881 * b;
+                    if(mode === 'simulate'){
+                        newR = (0.950 * r + 0.050 * g + 0.000 * b) * strength + r * (1 - strength);
+                        newG = (0.000 * r + 0.433 * g + 0.567 * b) * strength + g * (1 - strength);
+                        newB = (0.000 * r + 0.475 * g + 0.525 * b) * strength + b * (1 - strength);
+                    } else {
+                        let simR = 0.950 * r + 0.050 * g;
+                        let simG = 0.433 * g + 0.567 * b;
+                        let simB = 0.475 * g + 0.525 * b;
 
-                    let errR = r - simR;
-                    let errG = g - simG;
-                    let errB = b - simB;
+                        let errR = r - simR;
+                        let errG = g - simG;
+                        let errB = b - simB;
 
-                    let shiftR = errR * 0.0;
-                    let shiftG = errG * 0.7;
-                    let shiftB = (errR * 1.0) + (errG * 1.0);
+                        let shiftR = errR * 0.5;
+                        let shiftG = errG * 1.0;
+                        let shiftB = errB * 0.5;
 
-                    newR = r + shiftR * strength;
-                    newG = g + shiftG * strength;
-                    newB = b + shiftB * strength;
+                        newR = r + shiftR * strength;
+                        newG = g + shiftG * strength;
+                        newB = b + shiftB * strength;
+                    }
                 }
 
                 data[i] = Math.min(255, Math.max(0, newR));
@@ -77,6 +103,8 @@
         document.querySelectorAll('input[name="mode"]').forEach(radio => {
             radio.addEventListener('change', renderFilter);
         });
+
+        cvdTypeSelect.addEventListener('change', renderFilter);
 
         displayCanvas.addEventListener('mousedown', (e) => {
             drawing = true;
@@ -131,6 +159,14 @@
                 testModal.style.display = 'none';
 
                 if(type === 'redGreen'){
+                    cvdTypeSelect.value = 'deyteranomaly';
+                    severitySlider.value = 80;
+                    levelValue.textContent = 80;
+                    document.querySelector('input[value="enhance"]').checked = true;
+                    renderFilter();
+                } else if (type === 'blueYellow'){
+                    alert("您可能是蓝黄色弱,已切换至相应模式");
+                    cvdTypeSelect.value = 'tritanomaly';
                     severitySlider.value = 80;
                     levelValue.textContent = 80;
                     document.querySelector('input[value="enhance"]').checked = true;
