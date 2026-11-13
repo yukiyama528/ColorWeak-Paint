@@ -3,41 +3,14 @@
 <head>
     <meta charset="utf-8">
     <title>色弱绘画原型 - 实时渲染</title>
-    <style>
-        body {
-            margin: 0;
-            background: #222; 
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            color: white;
-            font-family: sans-serif; 
-        }
-
-        .toolbar {
-            display: flex;
-            gap: 15px;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-
-        canvas {
-            background: #fff;
-            cursor: crosshair;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
-        }
-    </style>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
     <div class="toolbar">
         <input type="color" id="colorPicker" value="#FF0000">
-
         <label>严重程度: <span id="levelValue">0</span></label>
         <input type="range" id="levelSlider" min="0" max="100" value="0">
-
         <label>
             <input type="radio" name="mode" value="simulate" checked> 模拟
         </label>
@@ -46,123 +19,44 @@
         </label>
     </div>
 
+    <div style="margin-bottom: 15px;">
+        <button id="startTestBtn" style="padding: 10px 20px; background: #2196F3; color: white; border: none; border-radius: 5px; cursor: pointer;">开始色弱测试</button>
+    </div>
+
+    <div id="testModal" style="display: none; position:fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.8); justify-content: center; align-items: center; z-index: 100;">
+        <div style="background: #333; padding: 30px; border-radius: 10px; text-align: center; max-width: 600px;">
+            <h2>请选择你觉得最难区分的两组颜色:</h2>
+            <div style="display: flex; gap: 20px; justify-content: center; margin-top: 20px;">
+                
+                <button class="test-btn" data-type="redGreen" style="padding: 20px; cursor:pointer; border: 2px solid transparent; border-radius: 8px; background: #222;">
+                    <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                        <div style="width: 40px; height: 40px; background: #FF0000;"></div>
+                        <div style="width: 40px; height: 40px; background: #00FF00;"></div>
+                    </div>
+                    <span style="color: white;">红色与绿色</span>
+                </button>
+
+                <button class="test-btn" data-type="blueYellow" style="padding: 20px; cursor:pointer; border: 2px solid transparent; border-radius: 8px; background: #222;">
+                    <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                        <div style="width: 40px; height: 40px; background: #0000FF;"></div>
+                        <div style="width: 40px; height: 40px; background: #FFFF00;"></div>
+                    </div>
+                    <span style="color: white;">蓝色与黄色</span>
+                </button>
+
+                <button class="test-btn" data-type="normal" style="padding: 20px; cursor: pointer; border: 2px solid transparent; border-radius: 8px; background: #222;">
+                    <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                        <div style="width: 40px; height: 40px; background: #999;"></div>
+                        <div style="width: 40px; height: 40px; background: #999;"></div>
+                    </div>
+                    <span style="color: white;">可分辨</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
     <canvas id="drawingCanvas" width="800" height="600"></canvas>
 
-    <script>
-        const displayCanvas = document.getElementById('drawingCanvas');
-        const displayCtx = displayCanvas.getContext('2d');
-
-        const offscreenCanvas = document.createElement('canvas');
-        offscreenCanvas.width = 800;
-        offscreenCanvas.height = 600;
-        const offscreenCtx = offscreenCanvas.getContext('2d');
-
-        offscreenCtx.fillStyle = '#ffffff';
-        offscreenCtx.fillRect(0, 0, 800, 600);
-
-        displayCtx.drawImage(offscreenCanvas, 0, 0);
-
-        let drawing = false;
-        const colorPicker = document.getElementById('colorPicker');
-        const severitySlider = document.getElementById('levelSlider');
-        const levelValue = document.getElementById('levelValue');
-
-        function renderFilter() {
-            displayCtx.clearRect(0, 0, 800, 600);
-            displayCtx.drawImage(offscreenCanvas, 0, 0);
-
-            const strength = severitySlider.value / 100;
-            const mode = document.querySelector('input[name="mode"]:checked').value;
-
-            if(strength === 0) return;
-
-            const imageData = displayCtx.getImageData(0, 0, 800, 600);
-            const data = imageData.data;
-
-            for(let i = 0; i < data.length; i += 4) {
-                let r = data[i];
-                let g = data[i + 1];
-                let b = data[i + 2];
-
-                let newR, newG, newB; 
-
-                if(mode === 'simulate') {
-                    newR = (0.367322 * r + 0.860646 * g - 0.227968 * b) * strength + r * (1 - strength);
-                    newG = (0.280085 * r + 0.672501 * g + 0.047413 * b) * strength + g * (1 - strength);
-                    newB = (-0.011820 * r + 0.042940 * g + 0.968881 * b) * strength + b * (1 - strength);
-                } else {
-                    let simR = 0.367322 * r + 0.860646 * g - 0.227968 * b;
-                    let simG = 0.280085 * r + 0.672501 * g + 0.047413 * b;
-                    let simB = -0.011820 * r + 0.042940 * g + 0.968881 * b;
-
-                    let errR = r - simR;
-                    let errG = g - simG;
-                    let errB = b - simB;
-
-                    let shiftR = errR * 0.0;
-                    let shiftG = errG * 0.7;
-                    let shiftB = (errR * 1.0) + (errG * 1.0);
-
-                    newR = r + shiftR * strength;
-                    newG = g + shiftG * strength;
-                    newB = b + shiftB * strength;
-                }
-
-                data[i] = Math.min(255, Math.max(0, newR));
-                data[i + 1] = Math.min(255, Math.max(0, newG));
-                data[i + 2] = Math.min(255, Math.max(0, newB));
-            }
-            displayCtx.putImageData(imageData, 0, 0);
-        }
-
-        colorPicker.addEventListener('input', (e) => {
-            offscreenCtx.strokeStyle = e.target.value;
-            displayCtx.strokeStyle = e.target.value;
-        });
-
-        severitySlider.addEventListener('input', (e) => {
-            levelValue.textContent = e.target.value;
-            renderFilter();
-        });
-
-        document.querySelectorAll('input[name="mode"]').forEach(radio => {
-            radio.addEventListener('change', renderFilter);
-        });
-
-        displayCanvas.addEventListener('mousedown', (e) => {
-            drawing = true;
-            offscreenCtx.lineWidth = 10;
-            displayCtx.lineWidth = 10;
-
-            offscreenCtx.beginPath();
-            offscreenCtx.moveTo(e.offsetX, e.offsetY);
-            
-            displayCtx.beginPath();
-            displayCtx.moveTo(e.offsetX, e.offsetY);
-        });
-
-        displayCanvas.addEventListener('mousemove', (e) => {
-            if(!drawing) return;
-
-            offscreenCtx.lineTo(e.offsetX, e.offsetY);
-            offscreenCtx.stroke();
-
-            if(severitySlider.value == 0){
-                displayCtx.lineTo(e.offsetX, e.offsetY);
-                displayCtx.stroke();
-            }else{
-                renderFilter();
-            }   
-        });
-
-        displayCanvas.addEventListener('mouseup', () => {
-            drawing = false;
-        });
-        displayCanvas.addEventListener('mouseleave', () => {
-            drawing = false;
-        });
-
-        renderFilter();
-    </script>
+    <script src="app.js"></script>
 </body>
 </html>
