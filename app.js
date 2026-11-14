@@ -1,4 +1,4 @@
- const displayCanvas = document.getElementById('drawingCanvas');
+        const displayCanvas = document.getElementById('drawingCanvas');
         const displayCtx = displayCanvas.getContext('2d');
 
         const offscreenCanvas = document.createElement('canvas');
@@ -15,6 +15,18 @@
         const colorPicker = document.getElementById('colorPicker');
         const severitySlider = document.getElementById('levelSlider');
         const levelValue = document.getElementById('levelValue');
+        const cvdTypeSelect = document.getElementById('cvdTypeSelect');
+
+        const sizeSlider = document.getElementById('sizeSlider');
+        const eraserBtn = document.getElementById('eraserBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        let currentColor = '#FF0000';
+        let isEraser = false;
+
+        offscreenCtx.strokeStyle = currentColor;
+        displayCtx.strokeStyle = currentColor;
+        offscreenCtx.lineWidth = sizeSlider.value;
+        displayCtx.lineWidth = sizeSlider.value;
 
         function renderFilter() {
             displayCtx.clearRect(0, 0, 800, 600);
@@ -91,9 +103,28 @@
         }
 
         colorPicker.addEventListener('input', (e) => {
+            currentColor = e.target.value;
+            isEraser = false;
             offscreenCtx.strokeStyle = e.target.value;
             displayCtx.strokeStyle = e.target.value;
         });
+
+        sizeSlider.addEventListener('input', (e) => {
+            offscreenCtx.lineWidth = e.target.value;
+            displayCtx.lineWidth = e.target.value;
+        });
+
+        eraserBtn.addEventListener('click', () => {
+            isEraser = true;
+            offscreenCtx.strokeStyle = '#FFFFFF';
+            displayCtx.strokeStyle = '#FFFFFF';
+        });
+
+        clearBtn.addEventListener('click', () => {
+            offscreenCtx.fillStyle = '#ffffff';
+            offscreenCtx.fillRect(0, 0, 800, 600);
+            renderFilter();
+        })
 
         severitySlider.addEventListener('input', (e) => {
             levelValue.textContent = e.target.value;
@@ -108,12 +139,18 @@
 
         displayCanvas.addEventListener('mousedown', (e) => {
             drawing = true;
-            offscreenCtx.lineWidth = 10;
-            displayCtx.lineWidth = 10;
+
+            if(isEraser){
+                offscreenCtx.strokeStyle = '#FFFFFF';
+                displayCtx.strokeStyle = '#FFFFFF';
+            } else {
+                offscreenCtx.strokeStyle = currentColor;
+                displayCtx.strokeStyle = currentColor;
+            }
 
             offscreenCtx.beginPath();
             offscreenCtx.moveTo(e.offsetX, e.offsetY);
-            
+
             displayCtx.beginPath();
             displayCtx.moveTo(e.offsetX, e.offsetY);
         });
@@ -124,7 +161,8 @@
             offscreenCtx.lineTo(e.offsetX, e.offsetY);
             offscreenCtx.stroke();
 
-            if(severitySlider.value == 0){
+            if(severitySlider.value == 0 || isEraser){
+                displayCtx.strokeStyle = isEraser ? '#FFFFFF' : currentColor;
                 displayCtx.lineTo(e.offsetX, e.offsetY);
                 displayCtx.stroke();
             }else{
@@ -159,7 +197,7 @@
                 testModal.style.display = 'none';
 
                 if(type === 'redGreen'){
-                    cvdTypeSelect.value = 'deyteranomaly';
+                    cvdTypeSelect.value = 'deuteranomaly';
                     severitySlider.value = 80;
                     levelValue.textContent = 80;
                     document.querySelector('input[value="enhance"]').checked = true;
