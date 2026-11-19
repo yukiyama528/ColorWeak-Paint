@@ -15,13 +15,16 @@
         let drawing = false;
         let points = [];
         let isEraser = false;
+        let isPicker = false;
         let historyStack = [];
         let currentColor = '#FF0000';
 
         const colorPicker = document.getElementById('colorPicker');
         const sizeSlider = document.getElementById('sizeSlider');
+        const opacitySlider = document.getElementById('opacitySlider');
         const eraserBtn = document.getElementById('eraserBtn');
         const clearBtn = document.getElementById('clearBtn');
+        const pickerBtn = document.getElementById('pickerBtn');
         const maxHistory = 20;
         const severitySlider = document.getElementById('levelSlider');
         const levelValue = document.getElementById('levelValue');
@@ -96,8 +99,19 @@
         sizeSlider.addEventListener('input', (e) => {
             offscreenCtx.lineWidth = e.target.value; leftCtx.lineWidth = e.target.value; rightCtx.lineWidth = e.target.value;
         });
+        opacitySlider.addEventListener('input', (e) =>{
+            const opacityValue = e.target.value / 100;
+            offscreenCtx.globalAlpha = opacityValue;
+        });
         eraserBtn.addEventListener('click', () => {
             isEraser = true; offscreenCtx.strokeStyle = '#FFFFFF'; leftCtx.strokeStyle = '#FFFFFF';
+        });
+        pickerBtn.addEventListener('click', () => {
+            isPicker = !isPicker;
+            isEraser = false;
+
+            pickerBtn.style.background = isPicker ? '#4CAF50' : '#E91E63';
+            pickerBtn.innerText = isPicker ? '吸管: 开启' : '吸管: 关闭';
         });
         clearBtn.addEventListener('click', () => {
             offscreenCtx.fillStyle = '#ffffff'; offscreenCtx.fillRect(0, 0, 800, 600); renderFilter(); saveHistory();
@@ -132,7 +146,7 @@
                 const rect = e.target.getBoundingClientRect();
                 return{
                     x:e.touches[0].clientX - rect.left,
-                    y:e.touched[0].clientY - rect.top
+                    y:e.touches[0].clientY - rect.top
                 };
             }
             return { x: e.offsetX, y: e.offsetY};
@@ -140,6 +154,19 @@
 
         function handleDown(e){
             if(e.type === 'touchstart') e.preventDefault();
+
+            if(isPicker){
+                const coords = getCoords(e);
+                const pixel = rightCtx.getImageData(coords.x, coords.y, 1, 1).data;
+                const r = pixel[0], g = pixel[1], b = pixel[2];
+                const hex = "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1).toUpperCase();
+                alert(`当前颜色:\nRGB: (${r}, ${g}, ${b})\nHEX: ${hex}`);
+
+                isPicker = false;
+                pickerBtn.style.background = '#E91E63';
+                pickerBtn.innerText = '吸管: 关闭';
+                return;
+            }
             drawing =true;
             points = [];
             
@@ -148,6 +175,8 @@
 
             const colorToUse = isEraser ? '#FFFFFF' : currentColor;
             offscreenCtx.strokeStyle = colorToUse;
+
+            offscreenCtx.globalAlpha = isEraser ? 1 : (opacitySlider.value / 100);
 
             offscreenCtx.beginPath();
             offscreenCtx.arc(coords.x, coords.y, offscreenCtx.lineWidth /2, 0, Math.PI * 2);
