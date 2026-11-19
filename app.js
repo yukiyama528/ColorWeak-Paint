@@ -15,12 +15,14 @@
         let drawing = false;
         let points = [];
         let isEraser = false;
+        let historyStack = [];
         let currentColor = '#FF0000';
 
         const colorPicker = document.getElementById('colorPicker');
         const sizeSlider = document.getElementById('sizeSlider');
         const eraserBtn = document.getElementById('eraserBtn');
         const clearBtn = document.getElementById('clearBtn');
+        const maxHistory = 20;
         const severitySlider = document.getElementById('levelSlider');
         const levelValue = document.getElementById('levelValue');
         const cvdTypeSelect = document.getElementById('cvdTypeSelect');
@@ -98,30 +100,73 @@
             isEraser = true; offscreenCtx.strokeStyle = '#FFFFFF'; leftCtx.strokeStyle = '#FFFFFF';
         });
         clearBtn.addEventListener('click', () => {
-            offscreenCtx.fillStyle = '#ffffff'; offscreenCtx.fillRect(0, 0, 800, 600); renderFilter();
+            offscreenCtx.fillStyle = '#ffffff'; offscreenCtx.fillRect(0, 0, 800, 600); renderFilter(); saveHistory();
         });
         severitySlider.addEventListener('input', (e) => { levelValue.textContent = e.target.value; renderFilter(); });
         document.querySelectorAll('input[name="mode"]').forEach(radio => radio.addEventListener('change', renderFilter));
         cvdTypeSelect.addEventListener('change', renderFilter);
 
-        function handleDown(e) {
-            drawing = true; points = [];
-            points.push({ x: e.offsetX, y: e.offsetY });
+        function saveHistory(){
+            if(historyStack.length >= maxHistory){
+                historyStack.shift();
+            }
+            const snapshot = new Image();
+            snapshot.src = offscreenCanvas.toDataURL();
+            historyStack.push(snapshot);
+        }
+
+        function undo(){
+            if(historyStack.length > 1){
+                historyStack.pop();
+                const previousState = historyStack[historyStack.length - 1];
+
+                offscreenCtx.clearRect(0, 0, 800, 600);
+                offscreenCtx.drawImage(previousState, 0, 0);
+
+                renderFilter();
+            }
+        }
+
+        function getCoords(e) {
+            if(e.touches && e.touches.length > 0){
+                const rect = e.target.getBoundingClientRect();
+                return{
+                    x:e.touches[0].clientX - rect.left,
+                    y:e.touched[0].clientY - rect.top
+                };
+            }
+            return { x: e.offsetX, y: e.offsetY};
+        }
+
+        function handleDown(e){
+            if(e.type === 'touchstart') e.preventDefault();
+            drawing =true;
+            points = [];
+            
+            const coords = getCoords(e);
+            points.push(coords);
+
             const colorToUse = isEraser ? '#FFFFFF' : currentColor;
             offscreenCtx.strokeStyle = colorToUse;
-            
+
             offscreenCtx.beginPath();
-            offscreenCtx.arc(e.offsetX, e.offsetY, offscreenCtx.lineWidth / 2, 0, Math.PI * 2);
-            offscreenCtx.fillStyle = colorToUse; offscreenCtx.fill();
+            offscreenCtx.arc(coords.x, coords.y, offscreenCtx.lineWidth /2, 0, Math.PI * 2);
+            offscreenCtx.fillStyle = colorToUse;
+            offscreenCtx.fill();
             renderFilter();
         }
 
-        function handleMove(e) {
+        function handleMove(e){
             if(!drawing) return;
-            points.push({ x: e.offsetX, y: e.offsetY });
+            if(e.type === 'touchmove') e.preventDefault();
+
+            const coords = getCoords(e);
+            points.push(coords);
+
             if(points.length >= 3){
                 const p1 = points[points.length - 3], p2 = points[points.length - 2], p3 = points[points.length - 1];
-                const xc = (p2.x + p3.x) / 2, yc = (p2.y + p3.y) / 2;
+                const xc  = (p2.x + p3.x) / 2,yc = (p2.y + p3.y) / 2;
+
                 offscreenCtx.beginPath();
                 offscreenCtx.moveTo(p1.x, p1.y);
                 offscreenCtx.quadraticCurveTo(p2.x, p2.y, xc, yc);
@@ -130,18 +175,28 @@
             }
         }
 
-        function handleUp() { drawing = false; }
+        function handleUp() {
+            drawing = false; 
+            saveHistory();
+        }
 
         [leftCanvas, rightCanvas].forEach(canvas => {
             canvas.addEventListener('mousedown', handleDown);
             canvas.addEventListener('mousemove', handleMove);
             canvas.addEventListener('mouseup', handleUp);
             canvas.addEventListener('mouseleave', handleUp);
+
+            canvas.addEventListener('touchstart', handleDown, { passive: false});
+            canvas.addEventListener('touchmove', handleMove,{ passive: false});
+            canvas.addEventListener('touchend', handleUp);
+            canvas.addEventListener('touchcancel', handleUp);
         });
 
         const startTestBtn = document.getElementById('startTestBtn');
         const testModal = document.getElementById('testModal');
         const testBtns = document.querySelectorAll('.test-btn');
+        const undoBtn = document.getElementById('undoBtn');
+        undoBtn.addEventListener('click', undo);
         startTestBtn.addEventListener('click', ()=>{ testModal.style.display = 'flex'; });
         testBtns.forEach(btn => {
             btn.addEventListener('click', (e) => {
@@ -161,4 +216,5 @@
             })
         });
 
+        saveHistory();
         renderFilter();
