@@ -29,6 +29,13 @@
         const severitySlider = document.getElementById('levelSlider');
         const levelValue = document.getElementById('levelValue');
         const cvdTypeSelect = document.getElementById('cvdTypeSelect');
+        const startTestBtn = document.getElementById('startTestBtn');
+        const testModal = document.getElementById('testModal');
+        const testBtns = document.querySelectorAll('.test-btn');
+        const undoBtn = document.getElementById('undoBtn');
+        const downloadOriginalBtn = document.getElementById('downloadOriginalBtn');
+        const downloadFilteredBtn = document.getElementById('downloadFilteredBtn');
+        const contrastSlider = document.getElementById('contrastSlider');
 
         offscreenCtx.strokeStyle = currentColor;
         offscreenCtx.lineWidth = sizeSlider.value;
@@ -45,8 +52,9 @@
             const strength = severitySlider.value / 100;
             const mode = document.querySelector('input[name="mode"]:checked').value;
             const cvdType = cvdTypeSelect.value;
+            const contrast = contrastSlider.value / 100;
 
-            if(strength === 0) return;
+            if(strength === 0 && contrast === 1) return;
 
             const imageData = rightCtx.getImageData(0, 0, 800, 600);
             const data = imageData.data;
@@ -84,6 +92,9 @@
                         newB = b + (errB * 0.5) * strength;
                     }
                 }
+                newR = ((newR / 255 - 0.5) * contrast + 0.5) * 255;
+                newG = ((newG / 255 - 0.5) * contrast + 0.5) * 255;
+                newB = ((newB / 255 - 0.5) * contrast + 0.5) * 255;
 
                 data[i] = Math.min(255, Math.max(0, newR));
                 data[i + 1] = Math.min(255, Math.max(0, newG));
@@ -98,6 +109,7 @@
         });
         sizeSlider.addEventListener('input', (e) => {
             offscreenCtx.lineWidth = e.target.value; leftCtx.lineWidth = e.target.value; rightCtx.lineWidth = e.target.value;
+            contrastSlider.addEventListener('input', renderFilter);
         });
         opacitySlider.addEventListener('input', (e) =>{
             const opacityValue = e.target.value / 100;
@@ -221,10 +233,6 @@
             canvas.addEventListener('touchcancel', handleUp);
         });
 
-        const startTestBtn = document.getElementById('startTestBtn');
-        const testModal = document.getElementById('testModal');
-        const testBtns = document.querySelectorAll('.test-btn');
-        const undoBtn = document.getElementById('undoBtn');
         undoBtn.addEventListener('click', undo);
         startTestBtn.addEventListener('click', ()=>{ testModal.style.display = 'flex'; });
         testBtns.forEach(btn => {

@@ -16,7 +16,9 @@
         <button id="clearBtn" style="padding: 5px 10px; background: #f44336; color: white; border: none; border-radius: 5px; cursor: pointer;">清空画布</botton>
         <button id="undoBtn" style="padding: 5px 10px; cursor: pointer; background:#FF9800; color: white; border: none; border-radius: 5px;">撤销</botton>
         <button id="pickerBtn" style="padding: 5px 10px; cursor: pointer; background: #E91E63; color: white; border: none; border-radius: 5px;">吸管取色</button>
-
+        <button id="downloadOriginalBtn" style="padding: 5px 10px; cursor: pointer; background: #607D8B; color: white; border: none; border-radius:5px;">保存原图</button>
+        <button id="downloadFilteredBtn" style="padding: 5px 10px; cursor:pointer; background: #009688; color:white; border: none; border-radius: 5px;">保存滤镜版</button>
+        
         <label>严重程度: <span id="levelValue">0</span></label>
         <input type="range" id="levelSlider" min="0" max="100" value="0">
         <label>
@@ -25,6 +27,8 @@
         <label>
             <input type="radio" name="mode" value="enhance"> 增强
         </label>
+
+        <label>对比度: <input type="range" id="contrastSlider" min="50" max="150" value="100"></label>
 
         <label>
             类型:
