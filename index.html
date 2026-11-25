@@ -18,7 +18,9 @@
         <button id="pickerBtn" style="padding: 5px 10px; cursor: pointer; background: #E91E63; color: white; border: none; border-radius: 5px;">吸管取色</button>
         <button id="downloadOriginalBtn" style="padding: 5px 10px; cursor: pointer; background: #607D8B; color: white; border: none; border-radius:5px;">保存原图</button>
         <button id="downloadFilteredBtn" style="padding: 5px 10px; cursor:pointer; background: #009688; color:white; border: none; border-radius: 5px;">保存滤镜版</button>
+        <button id="splitBtn" style="padding: 5px 10px; cursor: pointer; background: #9C27B0; color: white; border: none; border-radius: 5px;">开启对比分屏</button>
         
+
         <label>严重程度: <span id="levelValue">0</span></label>
         <input type="range" id="levelSlider" min="0" max="100" value="0">
         <label>
@@ -30,13 +32,23 @@
 
         <label>对比度: <input type="range" id="contrastSlider" min="50" max="150" value="100"></label>
 
-        <label>
-            类型:
+        <label>类型:
             <select id="cvdTypeSelect" style="padding: 5px; border-radius: 5px;">
                 <option value="deuteranomaly">红绿色弱</option>
                 <option value="tritanomaly">蓝黄色弱</option>
             </select>
         </label>
+    </div>
+
+    <div class="canvas-container">
+        <div class="canvas-wrapper">
+            <p>原始视角</p>
+            <canvas id="leftCanvas" width="800" height="600"></canvas>
+        </div>
+        <div class="canvas-wrapper">
+            <p>滤镜视角</p>
+            <canvas id="rightCanvas" width="800" height="600"></canvas>
+        </div>
     </div>
 
     <div style="margin-bottom: 15px;">
@@ -74,18 +86,6 @@
             </div>
         </div>
     </div>
-
-    <div style="display: flex; gap: 20px; position: relative;">
-        <div style="text-align: center;">
-            <p style="margin: 5px 0;">原始视角</p>
-            <canvas id="leftCanvas" width="800" height="600" style="background: #fff; cursor: crosshair;  box-shadow: 0 4px 12px rgba(0,0,0,0.5);"></canvas>
-            </div>
-            
-            <div style="text-align: center;">
-                <p style="margin: 5px 0;">滤镜视角</p>
-                <canvas id="rightCanvas" width="800" height="600" style="background: #fff; cursor: crosshair; box-shadow: 0 4px 12 px rgba(0,0,0,0.5);"></canvas>
-            </div>
-        </div>
     <script src="app.js"></script>
 </body>
 </html>

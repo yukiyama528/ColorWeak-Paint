@@ -1,4 +1,3 @@
-
         const leftCanvas = document.getElementById('leftCanvas');
         const leftCtx = leftCanvas.getContext('2d');
         
@@ -18,6 +17,7 @@
         let isPicker = false;
         let historyStack = [];
         let currentColor = '#FF0000';
+        let isSplit = false;
 
         const colorPicker = document.getElementById('colorPicker');
         const sizeSlider = document.getElementById('sizeSlider');
@@ -36,6 +36,7 @@
         const downloadOriginalBtn = document.getElementById('downloadOriginalBtn');
         const downloadFilteredBtn = document.getElementById('downloadFilteredBtn');
         const contrastSlider = document.getElementById('contrastSlider');
+        const splitBtn = document.getElementById('splitBtn');
 
         offscreenCtx.strokeStyle = currentColor;
         offscreenCtx.lineWidth = sizeSlider.value;
@@ -47,90 +48,157 @@
             leftCtx.drawImage(offscreenCanvas, 0, 0);
 
             rightCtx.clearRect(0, 0, 800, 600);
-            rightCtx.drawImage(offscreenCanvas, 0, 0);
+            
+            if (isSplit) {
+                rightCtx.drawImage(offscreenCanvas, 0, 0); 
+            } else {
+                rightCtx.drawImage(offscreenCanvas, 0, 0);
+            }
 
             const strength = severitySlider.value / 100;
             const mode = document.querySelector('input[name="mode"]:checked').value;
             const cvdType = cvdTypeSelect.value;
             const contrast = contrastSlider.value / 100;
 
-            if(strength === 0 && contrast === 1) return;
+            if(strength === 0 && contrast === 1 && !isSplit) return;
 
             const imageData = rightCtx.getImageData(0, 0, 800, 600);
             const data = imageData.data;
 
-            for(let i = 0; i < data.length; i += 4) {
-                let r = data[i], g = data[i+1], b = data[i+2];
-                let newR, newG, newB; 
+            const startX = isSplit ? 400 : 0;
 
-                if(cvdType === 'deuteranomaly'){
-                    if(mode === 'simulate') {
-                        newR = (0.367322 * r + 0.860646 * g - 0.227968 * b) * strength + r * (1 - strength);
-                        newG = (0.280085 * r + 0.672501 * g + 0.047413 * b) * strength + g * (1 - strength);
-                        newB = (-0.011820 * r + 0.042940 * g + 0.968881 * b) * strength + b * (1 - strength);
+            for(let y = 0; y < 600; y++) {
+                for(let x = startX; x < 800; x++) {
+                    const i = (y * 800 + x) * 4;
+                    
+                    let r = data[i], g = data[i+1], b = data[i+2];
+                    let newR, newG, newB; 
+
+                    if(cvdType === 'deuteranomaly'){
+                        if(mode === 'simulate') {
+                            newR = (0.367322 * r + 0.860646 * g - 0.227968 * b) * strength + r * (1 - strength);
+                            newG = (0.280085 * r + 0.672501 * g + 0.047413 * b) * strength + g * (1 - strength);
+                            newB = (-0.011820 * r + 0.042940 * g + 0.968881 * b) * strength + b * (1 - strength);
+                        } else {
+                            let simR = 0.367322 * r + 0.860646 * g - 0.227968 * b;
+                            let simG = 0.280085 * r + 0.672501 * g + 0.047413 * b;
+                            let simB = -0.011820 * r + 0.042940 * g + 0.968881 * b;
+                            let errR = r - simR, errG = g - simG, errB = b - simB;
+                            newR = r + (errR * 0.0) * strength;
+                            newG = g + (errG * 0.7) * strength;
+                            newB = b + ((errR * 1.0) + (errG * 1.0)) * strength;
+                        }
                     } else {
-                        let simR = 0.367322 * r + 0.860646 * g - 0.227968 * b;
-                        let simG = 0.280085 * r + 0.672501 * g + 0.047413 * b;
-                        let simB = -0.011820 * r + 0.042940 * g + 0.968881 * b;
-                        let errR = r - simR, errG = g - simG, errB = b - simB;
-                        newR = r + (errR * 0.0) * strength;
-                        newG = g + (errG * 0.7) * strength;
-                        newB = b + ((errR * 1.0) + (errG * 1.0)) * strength;
+                        if(mode === 'simulate'){
+                            newR = (0.950 * r + 0.050 * g) * strength + r * (1 - strength);
+                            newG = (0.433 * g + 0.567 * b) * strength + g * (1 - strength);
+                            newB = (0.475 * g + 0.525 * b) * strength + b * (1 - strength);
+                        } else {
+                            let simR = 0.950 * r + 0.050 * g;
+                            let simG = 0.433 * g + 0.567 * b;
+                            let simB = 0.475 * g + 0.525 * b;
+                            let errR = r - simR, errG = g - simG, errB = b - simB;
+                            newR = r + (errR * 0.5) * strength;
+                            newG = g + (errG * 1.0) * strength;
+                            newB = b + (errB * 0.5) * strength;
+                        }
                     }
-                } else {
-                    if(mode === 'simulate'){
-                        newR = (0.950 * r + 0.050 * g) * strength + r * (1 - strength);
-                        newG = (0.433 * g + 0.567 * b) * strength + g * (1 - strength);
-                        newB = (0.475 * g + 0.525 * b) * strength + b * (1 - strength);
-                    } else {
-                        let simR = 0.950 * r + 0.050 * g;
-                        let simG = 0.433 * g + 0.567 * b;
-                        let simB = 0.475 * g + 0.525 * b;
-                        let errR = r - simR, errG = g - simG, errB = b - simB;
-                        newR = r + (errR * 0.5) * strength;
-                        newG = g + (errG * 1.0) * strength;
-                        newB = b + (errB * 0.5) * strength;
-                    }
+
+                    newR = ((newR / 255 - 0.5) * contrast + 0.5) * 255;
+                    newG = ((newG / 255 - 0.5) * contrast + 0.5) * 255;
+                    newB = ((newB / 255 - 0.5) * contrast + 0.5) * 255;
+
+                    data[i] = Math.min(255, Math.max(0, newR));
+                    data[i + 1] = Math.min(255, Math.max(0, newG));
+                    data[i + 2] = Math.min(255, Math.max(0, newB));
                 }
-                newR = ((newR / 255 - 0.5) * contrast + 0.5) * 255;
-                newG = ((newG / 255 - 0.5) * contrast + 0.5) * 255;
-                newB = ((newB / 255 - 0.5) * contrast + 0.5) * 255;
-
-                data[i] = Math.min(255, Math.max(0, newR));
-                data[i + 1] = Math.min(255, Math.max(0, newG));
-                data[i + 2] = Math.min(255, Math.max(0, newB));
             }
+            
             rightCtx.putImageData(imageData, 0, 0);
+
+            if (isSplit) {
+                rightCtx.beginPath();
+                rightCtx.moveTo(400, 0);
+                rightCtx.lineTo(400, 600);
+                rightCtx.strokeStyle = 'red';
+                rightCtx.lineWidth = 2;
+                rightCtx.stroke();
+            }
         }
 
-        colorPicker.addEventListener('input', (e) => {
-            currentColor = e.target.value; isEraser = false;
-            offscreenCtx.strokeStyle = currentColor; leftCtx.strokeStyle = currentColor;
+                colorPicker.addEventListener('input', (e) => {
+            currentColor = e.target.value; 
+            isEraser = false;
+            offscreenCtx.strokeStyle = currentColor; 
+            leftCtx.strokeStyle = currentColor;
         });
+
         sizeSlider.addEventListener('input', (e) => {
-            offscreenCtx.lineWidth = e.target.value; leftCtx.lineWidth = e.target.value; rightCtx.lineWidth = e.target.value;
-            contrastSlider.addEventListener('input', renderFilter);
+            offscreenCtx.lineWidth = e.target.value; 
+            leftCtx.lineWidth = e.target.value; 
+            rightCtx.lineWidth = e.target.value;
         });
-        opacitySlider.addEventListener('input', (e) =>{
+
+        opacitySlider.addEventListener('input', (e) => {
             const opacityValue = e.target.value / 100;
             offscreenCtx.globalAlpha = opacityValue;
         });
+
+        // 🔴 独立监听对比度
+        contrastSlider.addEventListener('input', renderFilter);
+
         eraserBtn.addEventListener('click', () => {
-            isEraser = true; offscreenCtx.strokeStyle = '#FFFFFF'; leftCtx.strokeStyle = '#FFFFFF';
+            isEraser = true; 
+            offscreenCtx.strokeStyle = '#FFFFFF'; 
+            leftCtx.strokeStyle = '#FFFFFF';
         });
+
         pickerBtn.addEventListener('click', () => {
             isPicker = !isPicker;
             isEraser = false;
-
             pickerBtn.style.background = isPicker ? '#4CAF50' : '#E91E63';
             pickerBtn.innerText = isPicker ? '吸管: 开启' : '吸管: 关闭';
         });
-        clearBtn.addEventListener('click', () => {
-            offscreenCtx.fillStyle = '#ffffff'; offscreenCtx.fillRect(0, 0, 800, 600); renderFilter(); saveHistory();
+
+
+        splitBtn.addEventListener('click', () => {
+            isSplit = !isSplit;
+            splitBtn.innerText = isSplit ? '关闭对比分屏' : '开启对比分屏';
+            splitBtn.style.background = isSplit ? '#E91E63' : '#9C27B0';
+            renderFilter();
         });
-        severitySlider.addEventListener('input', (e) => { levelValue.textContent = e.target.value; renderFilter(); });
-        document.querySelectorAll('input[name="mode"]').forEach(radio => radio.addEventListener('change', renderFilter));
+
+        clearBtn.addEventListener('click', () => {
+            offscreenCtx.fillStyle = '#ffffff'; 
+            offscreenCtx.fillRect(0, 0, 800, 600); 
+            renderFilter(); 
+            saveHistory();
+        });
+
+        severitySlider.addEventListener('input', (e) => { 
+            levelValue.textContent = e.target.value; 
+            renderFilter(); 
+        });
+
+        document.querySelectorAll('input[name="mode"]').forEach(radio => {
+            radio.addEventListener('change', renderFilter);
+        });
+        
         cvdTypeSelect.addEventListener('change', renderFilter);
+
+        downloadOriginalBtn.addEventListener('click', () => {
+            const link = document.createElement('a');
+            link.download = 'ColorWeak_Original.png';
+            link.href = leftCanvas.toDataURL('image/png');
+            link.click();
+        });
+
+        downloadFilteredBtn.addEventListener('click', () => {
+            const link = document.createElement('a');
+            link.download = 'ColorWeak_Filtered.png';
+            link.href = rightCanvas.toDataURL('image/png');
+            link.click();
+        });
 
         function saveHistory(){
             if(historyStack.length >= maxHistory){
