@@ -9,31 +9,27 @@
 
     <div class="toolbar">
         <input type="color" id="colorPicker" value="#FF0000">
-
         <label>粗细: <input type="range" id="sizeSlider" min="1" max="50" value="10"></label>
-        <label>透明度: <input type="range"id="opacitySlider" min="10" max="100" value="100"></label>
-        <button id="eraserBtn" style="padding: 5px 10px; cursor: pointer;">橡皮擦</button>
-        <button id="clearBtn" style="padding: 5px 10px; background: #f44336; color: white; border: none; border-radius: 5px; cursor: pointer;">清空画布</botton>
-        <button id="undoBtn" style="padding: 5px 10px; cursor: pointer; background:#FF9800; color: white; border: none; border-radius: 5px;">撤销</botton>
-        <button id="pickerBtn" style="padding: 5px 10px; cursor: pointer; background: #E91E63; color: white; border: none; border-radius: 5px;">吸管取色</button>
-        <button id="downloadOriginalBtn" style="padding: 5px 10px; cursor: pointer; background: #607D8B; color: white; border: none; border-radius:5px;">保存原图</button>
-        <button id="downloadFilteredBtn" style="padding: 5px 10px; cursor:pointer; background: #009688; color:white; border: none; border-radius: 5px;">保存滤镜版</button>
-        <button id="splitBtn" style="padding: 5px 10px; cursor: pointer; background: #9C27B0; color: white; border: none; border-radius: 5px;">开启对比分屏</button>
+        <label>透明度: <input type="range" id="opacitySlider" min="10" max="100" value="100"></label>
         
-
+        <button id="eraserBtn">橡皮擦</button>
+        <button id="clearBtn">清空画布</button>
+        <button id="undoBtn">撤销</button>
+        <button id="pickerBtn">吸管取色</button>
+        <button id="downloadOriginalBtn">保存原图</button>
+        <button id="downloadFilteredBtn">保存滤镜版</button>
+        <button id="splitBtn">开启对比分屏</button>
+        
         <label>严重程度: <span id="levelValue">0</span></label>
         <input type="range" id="levelSlider" min="0" max="100" value="0">
-        <label>
-            <input type="radio" name="mode" value="simulate" checked> 模拟
-        </label>
-        <label>
-            <input type="radio" name="mode" value="enhance"> 增强
-        </label>
+        
+        <label><input type="radio" name="mode" value="simulate" checked> 模拟</label>
+        <label><input type="radio" name="mode" value="enhance"> 增强</label>
 
         <label>对比度: <input type="range" id="contrastSlider" min="50" max="150" value="100"></label>
 
         <label>类型:
-            <select id="cvdTypeSelect" style="padding: 5px; border-radius: 5px;">
+            <select id="cvdTypeSelect">
                 <option value="deuteranomaly">红绿色弱</option>
                 <option value="tritanomaly">蓝黄色弱</option>
             </select>
@@ -85,6 +81,25 @@
                 </button>
             </div>
         </div>
+    </div>
+
+    <!--欢迎/新手引导模板-->
+    <div id="welcomeModal" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%;background: rgba(0, 0, 0, 0.85); display: flex; justify-content: center; align-items: center; z-index: 200;">
+        <div style="background: #2a2a2a; padding: 40px; border-radius: 15px; text-align: center; max-width: 500px; box-shadow: 0 10px 30px rgba(0,0,0,0.8);">
+            <h2 style="color: #4CAF50; margin-top: 0;">欢迎使用色弱绘画模型</h2>
+            <p style="color: #ccc; line-height: 1.6; text-align: left;">
+                这是一个为色弱画师提供精确色差改良的绘画工具,同时,非色弱画师也可通过特定数据切换到色弱视角<br><br>
+                1. 左边是你的<b>原始画布</b>, 右边是<b>滤镜视角</b>.<br>
+                2. 调整上方的<b>"严重程度"</b>滑块, 右侧实时显示色弱模拟或增强效果.<br>
+                3. 使用<b>"吸管"</b>点击画布,可精准识别颜色色号.<br>
+                4. 支持手机端触控作画, 随时保存原图或滤镜图.
+            </p>
+            <button id="closeWelcomeBtn"style="margin-top: 20px; padding: 10px 30px; background: #4CAF50; color: white; font-size: 16px; border: none; border-radius: 8px; cursor: pointer;">开始创作</button>
+        </div>
+    </div>
+
+    <div id="toast" style="position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: rgba(0, 0, 0, 0.8); color: white; padding: 10px 20px; border-radius: 20px; font-size: 14px; opacity: 0; transition: opacity 0.3s; pointer-events: none; z-index: 300;">
+        提示信息
     </div>
     <script src="app.js"></script>
 </body>

@@ -22,38 +22,49 @@
         const colorPicker = document.getElementById('colorPicker');
         const sizeSlider = document.getElementById('sizeSlider');
         const opacitySlider = document.getElementById('opacitySlider');
+        const contrastSlider = document.getElementById('contrastSlider');
         const eraserBtn = document.getElementById('eraserBtn');
         const clearBtn = document.getElementById('clearBtn');
         const pickerBtn = document.getElementById('pickerBtn');
+        const undoBtn = document.getElementById('undoBtn');
+        const splitBtn = document.getElementById('splitBtn');
+        const downloadOriginalBtn = document.getElementById('downloadOriginalBtn');
+        const downloadFilteredBtn = document.getElementById('downloadFilteredBtn');
+        
         const maxHistory = 20;
         const severitySlider = document.getElementById('levelSlider');
         const levelValue = document.getElementById('levelValue');
         const cvdTypeSelect = document.getElementById('cvdTypeSelect');
+        
         const startTestBtn = document.getElementById('startTestBtn');
         const testModal = document.getElementById('testModal');
         const testBtns = document.querySelectorAll('.test-btn');
-        const undoBtn = document.getElementById('undoBtn');
-        const downloadOriginalBtn = document.getElementById('downloadOriginalBtn');
-        const downloadFilteredBtn = document.getElementById('downloadFilteredBtn');
-        const contrastSlider = document.getElementById('contrastSlider');
-        const splitBtn = document.getElementById('splitBtn');
+        
+        const welcomeModal = document.getElementById('welcomeModal');
+        const closeWelcomeBtn = document.getElementById('closeWelcomeBtn');
+        const toast = document.getElementById('toast');
 
         offscreenCtx.strokeStyle = currentColor;
         offscreenCtx.lineWidth = sizeSlider.value;
         leftCtx.lineWidth = sizeSlider.value;
         rightCtx.lineWidth = sizeSlider.value;
 
+        let toastTimeout;
+        function showToast(message) {
+            toast.innerText = message;
+            toast.style.opacity = '1';
+            clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(() => {
+                toast.style.opacity = '0';
+            }, 2000);
+        }
+
         function renderFilter() {
             leftCtx.clearRect(0, 0, 800, 600);
             leftCtx.drawImage(offscreenCanvas, 0, 0);
 
             rightCtx.clearRect(0, 0, 800, 600);
-            
-            if (isSplit) {
-                rightCtx.drawImage(offscreenCanvas, 0, 0); 
-            } else {
-                rightCtx.drawImage(offscreenCanvas, 0, 0);
-            }
+            rightCtx.drawImage(offscreenCanvas, 0, 0);
 
             const strength = severitySlider.value / 100;
             const mode = document.querySelector('input[name="mode"]:checked').value;
@@ -126,80 +137,6 @@
             }
         }
 
-                colorPicker.addEventListener('input', (e) => {
-            currentColor = e.target.value; 
-            isEraser = false;
-            offscreenCtx.strokeStyle = currentColor; 
-            leftCtx.strokeStyle = currentColor;
-        });
-
-        sizeSlider.addEventListener('input', (e) => {
-            offscreenCtx.lineWidth = e.target.value; 
-            leftCtx.lineWidth = e.target.value; 
-            rightCtx.lineWidth = e.target.value;
-        });
-
-        opacitySlider.addEventListener('input', (e) => {
-            const opacityValue = e.target.value / 100;
-            offscreenCtx.globalAlpha = opacityValue;
-        });
-
-        // 🔴 独立监听对比度
-        contrastSlider.addEventListener('input', renderFilter);
-
-        eraserBtn.addEventListener('click', () => {
-            isEraser = true; 
-            offscreenCtx.strokeStyle = '#FFFFFF'; 
-            leftCtx.strokeStyle = '#FFFFFF';
-        });
-
-        pickerBtn.addEventListener('click', () => {
-            isPicker = !isPicker;
-            isEraser = false;
-            pickerBtn.style.background = isPicker ? '#4CAF50' : '#E91E63';
-            pickerBtn.innerText = isPicker ? '吸管: 开启' : '吸管: 关闭';
-        });
-
-
-        splitBtn.addEventListener('click', () => {
-            isSplit = !isSplit;
-            splitBtn.innerText = isSplit ? '关闭对比分屏' : '开启对比分屏';
-            splitBtn.style.background = isSplit ? '#E91E63' : '#9C27B0';
-            renderFilter();
-        });
-
-        clearBtn.addEventListener('click', () => {
-            offscreenCtx.fillStyle = '#ffffff'; 
-            offscreenCtx.fillRect(0, 0, 800, 600); 
-            renderFilter(); 
-            saveHistory();
-        });
-
-        severitySlider.addEventListener('input', (e) => { 
-            levelValue.textContent = e.target.value; 
-            renderFilter(); 
-        });
-
-        document.querySelectorAll('input[name="mode"]').forEach(radio => {
-            radio.addEventListener('change', renderFilter);
-        });
-        
-        cvdTypeSelect.addEventListener('change', renderFilter);
-
-        downloadOriginalBtn.addEventListener('click', () => {
-            const link = document.createElement('a');
-            link.download = 'ColorWeak_Original.png';
-            link.href = leftCanvas.toDataURL('image/png');
-            link.click();
-        });
-
-        downloadFilteredBtn.addEventListener('click', () => {
-            const link = document.createElement('a');
-            link.download = 'ColorWeak_Filtered.png';
-            link.href = rightCanvas.toDataURL('image/png');
-            link.click();
-        });
-
         function saveHistory(){
             if(historyStack.length >= maxHistory){
                 historyStack.shift();
@@ -213,13 +150,92 @@
             if(historyStack.length > 1){
                 historyStack.pop();
                 const previousState = historyStack[historyStack.length - 1];
-
                 offscreenCtx.clearRect(0, 0, 800, 600);
                 offscreenCtx.drawImage(previousState, 0, 0);
-
                 renderFilter();
+                showToast("已撤销上一步");
+            } else {
+                showToast("没有可撤销的记录了");
             }
         }
+
+        colorPicker.addEventListener('input', (e) => {
+            currentColor = e.target.value; 
+            isEraser = false;
+            offscreenCtx.strokeStyle = currentColor; 
+            leftCtx.strokeStyle = currentColor;
+        });
+
+        sizeSlider.addEventListener('input', (e) => {
+            offscreenCtx.lineWidth = e.target.value; 
+            leftCtx.lineWidth = e.target.value; 
+            rightCtx.lineWidth = e.target.value;
+        });
+
+        opacitySlider.addEventListener('input', (e) => {
+            offscreenCtx.globalAlpha = e.target.value / 100;
+        });
+
+        contrastSlider.addEventListener('input', renderFilter);
+
+        eraserBtn.addEventListener('click', () => {
+            isEraser = true; 
+            isPicker = false;
+            offscreenCtx.strokeStyle = '#FFFFFF'; 
+            leftCtx.strokeStyle = '#FFFFFF';
+            showToast("已切换到橡皮擦");
+        });
+
+        pickerBtn.addEventListener('click', () => {
+            isPicker = !isPicker;
+            isEraser = false;
+            pickerBtn.style.background = isPicker ? '#4CAF50' : '#E91E63';
+            pickerBtn.innerText = isPicker ? '吸管: 开启' : '吸管: 关闭';
+            if(isPicker) showToast("吸管已开启，请点击画布取色");
+        });
+
+        splitBtn.addEventListener('click', () => {
+            isSplit = !isSplit;
+            splitBtn.innerText = isSplit ? '关闭对比分屏' : '开启对比分屏';
+            splitBtn.style.background = isSplit ? '#E91E63' : '#9C27B0';
+            renderFilter();
+        });
+
+        clearBtn.addEventListener('click', () => {
+            offscreenCtx.fillStyle = '#ffffff'; 
+            offscreenCtx.fillRect(0, 0, 800, 600); 
+            renderFilter(); 
+            saveHistory();
+            showToast("画布已清空");
+        });
+
+        severitySlider.addEventListener('input', (e) => { 
+            levelValue.textContent = e.target.value; 
+            renderFilter(); 
+        });
+
+        document.querySelectorAll('input[name="mode"]').forEach(radio => {
+            radio.addEventListener('change', renderFilter);
+        });
+        
+        cvdTypeSelect.addEventListener('change', renderFilter);
+        undoBtn.addEventListener('click', undo);
+
+        downloadOriginalBtn.addEventListener('click', () => {
+            const link = document.createElement('a');
+            link.download = 'ColorWeak_Original.png';
+            link.href = leftCanvas.toDataURL('image/png');
+            link.click();
+            showToast("原图已保存到本地");
+        });
+
+        downloadFilteredBtn.addEventListener('click', () => {
+            const link = document.createElement('a');
+            link.download = 'ColorWeak_Filtered.png';
+            link.href = rightCanvas.toDataURL('image/png');
+            link.click();
+            showToast("滤镜图已保存到本地");
+        });
 
         function getCoords(e) {
             if(e.touches && e.touches.length > 0){
@@ -240,14 +256,14 @@
                 const pixel = rightCtx.getImageData(coords.x, coords.y, 1, 1).data;
                 const r = pixel[0], g = pixel[1], b = pixel[2];
                 const hex = "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1).toUpperCase();
-                alert(`当前颜色:\nRGB: (${r}, ${g}, ${b})\nHEX: ${hex}`);
+                showToast(`已取色: ${hex} | RGB: (${r}, ${g}, ${b})`);
 
                 isPicker = false;
                 pickerBtn.style.background = '#E91E63';
                 pickerBtn.innerText = '吸管: 关闭';
                 return;
             }
-            drawing =true;
+            drawing = true;
             points = [];
             
             const coords = getCoords(e);
@@ -255,7 +271,6 @@
 
             const colorToUse = isEraser ? '#FFFFFF' : currentColor;
             offscreenCtx.strokeStyle = colorToUse;
-
             offscreenCtx.globalAlpha = isEraser ? 1 : (opacitySlider.value / 100);
 
             offscreenCtx.beginPath();
@@ -274,7 +289,7 @@
 
             if(points.length >= 3){
                 const p1 = points[points.length - 3], p2 = points[points.length - 2], p3 = points[points.length - 1];
-                const xc  = (p2.x + p3.x) / 2,yc = (p2.y + p3.y) / 2;
+                const xc  = (p2.x + p3.x) / 2, yc = (p2.y + p3.y) / 2;
 
                 offscreenCtx.beginPath();
                 offscreenCtx.moveTo(p1.x, p1.y);
@@ -301,8 +316,8 @@
             canvas.addEventListener('touchcancel', handleUp);
         });
 
-        undoBtn.addEventListener('click', undo);
         startTestBtn.addEventListener('click', ()=>{ testModal.style.display = 'flex'; });
+        
         testBtns.forEach(btn => {
             btn.addEventListener('click', (e) => {
                 const type = e.currentTarget.getAttribute('data-type');
@@ -310,15 +325,21 @@
                 if(type === 'redGreen'){
                     cvdTypeSelect.value = 'deuteranomaly'; severitySlider.value = 80; levelValue.textContent = 80;
                     document.querySelector('input[value="enhance"]').checked = true; renderFilter();
+                    showToast("已为您配置红绿色弱增强模式");
                 } else if (type === 'blueYellow'){
-                    alert("您可能是蓝黄色弱,已切换至相应模式");
                     cvdTypeSelect.value = 'tritanomaly'; severitySlider.value = 80; levelValue.textContent = 80;
                     document.querySelector('input[value="enhance"]').checked = true; renderFilter();
+                    showToast("已为您配置蓝黄色弱增强模式");
                 } else {
-                    alert("您的色觉可能为正常,或属于其他罕见类型.已重置参数");
                     severitySlider.value = 0; levelValue.textContent = 0; renderFilter();
+                    showToast("已重置为原始视角");
                 }
             })
+        });
+
+        closeWelcomeBtn.addEventListener('click', ()=> {
+            welcomeModal.style.display = 'none';
+            showToast("欢迎体验");
         });
 
         saveHistory();
